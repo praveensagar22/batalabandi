@@ -19,6 +19,8 @@ import { getCart, getLocalCart } from '@/lib/cart/store';
 import { fetchCategoriesAPI } from '@/lib/api/catalog';
 import { Category } from '@/lib/categories/types';
 import CategoriesDrawer from '@/components/common/CategoriesDrawer';
+import AuthModal from '@/components/common/AuthModal';
+import { getStoredUser, UserProfile } from '@/lib/api/auth';
 
 export default function DesktopHeader() {
   const pathname = usePathname();
@@ -30,6 +32,8 @@ export default function DesktopHeader() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeGender, setActiveGender] = useState<'men' | 'women' | 'unisex' | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const updateCounts = async () => {
     const wishItems = getWishlist();
@@ -38,6 +42,9 @@ export default function DesktopHeader() {
     const cartItems = getLocalCart();
     const totalQty = cartItems.reduce((acc, item) => acc + item.quantity, 0);
     setCartCount(totalQty);
+
+    const u = getStoredUser();
+    setUser(u);
   };
 
   useEffect(() => {
@@ -180,13 +187,27 @@ export default function DesktopHeader() {
           {/* Action Icons */}
           <div className="flex items-center gap-2">
             {/* User Account */}
-            <Link
-              href="/checkout"
-              className="w-9 h-9 rounded-full hover:bg-black/10 flex items-center justify-center text-stone-950 transition-colors"
-              title="Profile"
-            >
-              <User className="w-5 h-5" strokeWidth={2} />
-            </Link>
+            {user ? (
+              <Link
+                href="/profile"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-stone-950 text-amber-300 text-[11px] font-black hover:bg-stone-800 transition"
+                title="Your Profile"
+              >
+                <div className="w-5 h-5 rounded-full bg-amber-400 text-stone-950 flex items-center justify-center text-[10px] font-extrabold">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+                <span className="hidden lg:inline max-w-[80px] truncate">{user.name.split(' ')[0]}</span>
+              </Link>
+            ) : (
+              <button
+                onClick={() => setIsAuthOpen(true)}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-stone-950/10 hover:bg-stone-950/20 text-stone-950 text-xs font-black transition active:scale-95"
+                title="Log In / Register"
+              >
+                <User className="w-4 h-4" strokeWidth={2.5} />
+                <span className="hidden sm:inline">Log In</span>
+              </button>
+            )}
 
             {/* Wishlist */}
             <Link
@@ -312,6 +333,16 @@ export default function DesktopHeader() {
       <CategoriesDrawer
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
+      />
+
+      {/* Login & Register Auth Modal */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        onSuccess={(u) => {
+          setUser(u);
+          window.dispatchEvent(new Event('cart-updated'));
+        }}
       />
     </header>
   );
