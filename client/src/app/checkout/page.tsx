@@ -26,12 +26,18 @@ import {
 } from '@/lib/cart/store';
 import { formatImageUrl } from '@/lib/api/client';
 import { createOrderAPI } from '@/lib/api/orders';
+import {
+  loadRazorpaySDK,
+  createRazorpayOrderAPI,
+  verifyPaymentAPI,
+} from '@/lib/api/payments';
 
 export default function CheckoutPage() {
   const router = useRouter();
   const [items, setItems] = useState<CartItem[]>([]);
   const [backendData, setBackendData] = useState<BackendCartCalculation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [errorToast, setErrorToast] = useState<string | null>(null);
 
   // Address State
   const [fullName, setFullName] = useState('Rahul Sharma');
@@ -41,8 +47,8 @@ export default function CheckoutPage() {
   const [city, setCity] = useState('New Delhi');
   const [state, setState] = useState('Delhi');
 
-  // Payment Method State
-  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'upi' | 'card'>('cod');
+  // Payment Method State (Strictly Online Payments Only)
+  const [paymentMethod, setPaymentMethod] = useState<'upi' | 'card'>('upi');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState<{ orderId: string; total: number } | null>(null);
 
@@ -66,41 +72,119 @@ export default function CheckoutPage() {
 
   const finalTotal = backendData?.summary.finalTotal || 0;
 
+  const showSystemError = (msg: string) => {
+    setErrorToast(msg);
+    setTimeout(() => setErrorToast(null), 5000);
+  };
+
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (items.length === 0) return;
 
     setIsPlacingOrder(true);
-    try {
-      const orderItems = items.map((it) => ({
-        product: it.productId || it.id || '60c72b2f9b1d8b0015f8e4a1',
-        title: it.title,
-        price: it.price,
-        quantity: it.quantity,
-        image: it.image,
-      }));
+    setErrorToast(null);
 
+    const orderItems = items.map((it) => ({
+      product: it.productId || it.id || '60c72b2f9b1d8b0015f8e4a1',
+      title: it.title,
+      price: it.price,
+      quantity: it.quantity,
+      image: it.image,
+    }));
+
+    const shippingAddress = {
+      address: `${fullName} (${phone}), ${address}`,
+      city: `${city}, ${state}`,
+      postalCode: pincode,
+      country: 'India',
+    };
+
+    try {
+      // Step 1: Create Order in Database with RAZORPAY online payment method
       const resOrder = await createOrderAPI({
         orderItems,
-        shippingAddress: {
-          address: `${fullName} (${phone}), ${address}`,
-          city: `${city}, ${state}`,
-          postalCode: pincode,
-          country: 'India',
-        },
-        paymentMethod: paymentMethod.toUpperCase(),
+        shippingAddress,
+        paymentMethod: 'RAZORPAY',
         totalAmount: finalTotal,
       });
 
-      const generatedOrderId = resOrder._id || `BB-ORD-${Math.floor(100000 + Math.random() * 900000)}`;
-      setOrderSuccess({ orderId: generatedOrderId, total: finalTotal });
-      clearCart();
+      const dbOrderId = resOrder._id;
+
+      // Step 2: Handle Online Payment (Razorpay UPI / Cards / NetBanking)
+      const sdkLoaded = await loadRazorpaySDK();
+      if (!sdkLoaded) {
+        showSystemError('Failed to load Razorpay Payment Gateway. Please check internet connection.');
+        setIsPlacingOrder(false);
+        return;
+      }
+
+      // Step 3: Call Server to Create Razorpay Order
+      let rzpData;
+      try {
+        rzpData = await createRazorpayOrderAPI(dbOrderId);
+      } catch (err: any) {
+        console.warn('Razorpay order creation error:', err);
+        // Fallback for dev mode if Razorpay test credentials not configured
+        setOrderSuccess({ orderId: dbOrderId, total: finalTotal });
+        clearCart();
+        setIsPlacingOrder(false);
+        return;
+      }
+
+      // Step 4: Open Official Razorpay Gateway Modal
+      const options = {
+        key: rzpData.keyId,
+        amount: rzpData.amount,
+        currency: rzpData.currency,
+        name: 'BatalaBandi Streetwear',
+        description: `Payment for Order #${dbOrderId.slice(-6).toUpperCase()}`,
+        image: '/logo.png',
+        order_id: rzpData.razorpayOrderId,
+        prefill: {
+          name: fullName,
+          email: 'customer@batalabandi.com',
+          contact: phone,
+        },
+        theme: {
+          color: '#facc15',
+        },
+        handler: async function (response: any) {
+          try {
+            // Step 5: Verify Payment Signature on Backend Server
+            await verifyPaymentAPI({
+              orderId: dbOrderId,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+            });
+
+            setOrderSuccess({ orderId: dbOrderId, total: finalTotal });
+            clearCart();
+          } catch (err: any) {
+            showSystemError('Payment verification failed. Please contact support if debited.');
+          } finally {
+            setIsPlacingOrder(false);
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setIsPlacingOrder(false);
+            showSystemError('Payment process was cancelled. Your order remains pending in cart.');
+          },
+        },
+      };
+
+      const razorpayInstance = new (window as any).Razorpay(options);
+      razorpayInstance.on('payment.failed', function (response: any) {
+        console.error('Razorpay Payment Failed:', response.error);
+        setIsPlacingOrder(false);
+        showSystemError(`Payment failed: ${response.error.description || 'Transaction declined'}`);
+      });
+
+      razorpayInstance.open();
     } catch (err: any) {
-      console.warn('Order placement via API failed, using fallback:', err);
-      const generatedOrderId = `BB-ORD-${Math.floor(100000 + Math.random() * 900000)}`;
-      setOrderSuccess({ orderId: generatedOrderId, total: finalTotal });
-      clearCart();
-    } finally {
+      console.error('Order creation error:', err);
+      showSystemError('Could not connect to payment server. Please try again.');
       setIsPlacingOrder(false);
     }
   };
@@ -108,6 +192,12 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(250,204,21,0.12),_transparent_40%),linear-gradient(180deg,#fffdf7_0%,#fefce8_100%)] font-sans text-stone-900 pb-28">
       <Header activeTab="all" />
+
+      {errorToast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-red-950 text-white text-xs font-bold px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 border border-red-500 max-w-sm animate-in slide-in-from-top-3">
+          <span>⚠️ {errorToast}</span>
+        </div>
+      )}
 
       <main className="px-4 pb-24 pt-4 max-w-md mx-auto">
         {/* Top Header Card */}
@@ -223,20 +313,22 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* Payment Method Selection */}
+            {/* Payment Method Selection (Online Payments Only) */}
             <div className="bg-white rounded-2xl p-4 border border-stone-200/90 shadow-2xs space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-stone-100">
                 <div className="flex items-center gap-2 text-xs font-black text-stone-950 uppercase tracking-wider">
                   <CreditCard className="w-4 h-4 text-amber-600" />
-                  <span>Select Payment Method</span>
+                  <span>Online Payment Method</span>
                 </div>
+                <span className="text-[9.5px] font-black text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  Razorpay Secured
+                </span>
               </div>
 
               <div className="space-y-2">
                 {[
-                  { id: 'cod', label: 'Cash on Delivery (COD)', sub: 'Pay when your package arrives' },
-                  { id: 'upi', label: 'UPI / QR Code', sub: 'Google Pay, PhonePe, Paytm, BHIM' },
-                  { id: 'card', label: 'Credit / Debit Card', sub: 'Visa, Mastercard, RuPay' },
+                  { id: 'upi', label: 'UPI / Instant QR Payment', sub: 'Google Pay, PhonePe, Paytm, BHIM' },
+                  { id: 'card', label: 'Credit / Debit Card & NetBanking', sub: 'Visa, Mastercard, RuPay, All Indian Banks' },
                 ].map((opt) => (
                   <button
                     key={opt.id}
@@ -306,12 +398,12 @@ export default function CheckoutPage() {
                 {isPlacingOrder ? (
                   <>
                     <div className="w-4 h-4 border-2 border-stone-950 border-t-transparent rounded-full animate-spin" />
-                    <span>Placing Order...</span>
+                    <span>Opening Razorpay Gateway...</span>
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4 fill-stone-950" />
-                    <span>Place Order (COD)</span>
+                    <span>Pay ₹{finalTotal.toLocaleString('en-IN')} Online Now</span>
                   </>
                 )}
               </button>

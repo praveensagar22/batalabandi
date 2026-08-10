@@ -1,5 +1,6 @@
 import { Cart, ICartItem } from './cart.model';
 import { Product } from '../products/product.model';
+import { CouponModel } from '../marketing/coupon.model';
 import { AppError } from '../../utils/appError';
 
 export interface CouponResult {
@@ -194,13 +195,67 @@ export class CartService {
 
     const productDiscount = Math.max(0, originalTotal - subtotal);
 
-    // Coupon Calculation
+    // Dynamic MongoDB & Fallback Coupon Calculation
     let couponResult: CouponResult | null = null;
     let couponDiscount = 0;
 
     if (activeCoupon && activeCoupon.trim()) {
       const code = activeCoupon.trim().toUpperCase();
-      if (code === 'WELCOME10' || code === 'BATALA10') {
+      const dbCoupon = await CouponModel.findOne({ code, status: 'Active' });
+
+      if (dbCoupon) {
+        const isExpired = dbCoupon.expiryDate && new Date(dbCoupon.expiryDate) < new Date();
+        const meetsMinPurchase = subtotal >= (dbCoupon.minPurchaseAmount || 0);
+        const withinUsageLimit = !dbCoupon.usageLimit || dbCoupon.usedCount < dbCoupon.usageLimit;
+
+        if (isExpired) {
+          couponResult = {
+            code,
+            isValid: false,
+            discountType: 'percentage',
+            discountValue: 0,
+            discountAmount: 0,
+            message: `Coupon ${code} has expired.`,
+          };
+        } else if (!meetsMinPurchase) {
+          couponResult = {
+            code,
+            isValid: false,
+            discountType: 'percentage',
+            discountValue: 0,
+            discountAmount: 0,
+            message: `Min. purchase of ₹${dbCoupon.minPurchaseAmount} required for ${code}.`,
+          };
+        } else if (!withinUsageLimit) {
+          couponResult = {
+            code,
+            isValid: false,
+            discountType: 'percentage',
+            discountValue: 0,
+            discountAmount: 0,
+            message: `Coupon ${code} usage limit reached.`,
+          };
+        } else {
+          if (dbCoupon.discountType === 'Percentage') {
+            let calculated = Math.round((subtotal * dbCoupon.discountValue) / 100);
+            if (dbCoupon.maxDiscountAmount && dbCoupon.maxDiscountAmount > 0) {
+              calculated = Math.min(calculated, dbCoupon.maxDiscountAmount);
+            }
+            couponDiscount = calculated;
+          } else if (dbCoupon.discountType === 'Flat') {
+            couponDiscount = Math.min(dbCoupon.discountValue, subtotal);
+          }
+
+          couponResult = {
+            code,
+            isValid: true,
+            discountType: dbCoupon.discountType === 'Flat' ? 'fixed' : 'percentage',
+            discountValue: dbCoupon.discountValue,
+            discountAmount: couponDiscount,
+            message: `${code} Applied! 🎉 (${dbCoupon.description || `${dbCoupon.discountValue}% Off`})`,
+          };
+        }
+      } else if (code === 'WELCOME10' || code === 'BATALA10') {
         couponDiscount = Math.round((subtotal * 10) / 100);
         couponResult = {
           code,

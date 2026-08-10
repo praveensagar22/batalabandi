@@ -12,6 +12,9 @@ const envSchema = z.object({
   JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
   CLIENT_URL: z.string().default('http://localhost:3000'),
+  RAZORPAY_KEY_ID: z.string().default('rzp_test_TOAoM0QDJ1iiw4'),
+  RAZORPAY_KEY_SECRET: z.string().default('ENCdcFXYGi4xayYKzBfbKwc5'),
+  RAZORPAY_WEBHOOK_SECRET: z.string().default('batalabandi_webhook_secret_2026'),
 });
 
 const _env = envSchema.safeParse(process.env);

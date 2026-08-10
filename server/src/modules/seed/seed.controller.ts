@@ -6,6 +6,7 @@ import { CollectionModel } from '../collections/collection.model';
 import { ThemeModel } from '../themes/theme.model';
 import { AttributeModel } from '../attributes/attribute.model';
 import { InventoryModel } from '../inventory/inventory.model';
+import { CouponModel } from '../marketing/coupon.model';
 import { User } from '../auth/user.model';
 import { catchAsync } from '../../utils/catchAsync';
 
@@ -482,10 +483,68 @@ export class SeedController {
       invSeeded = true;
     }
 
+    // Seed Coupons
+    const couponCount = await CouponModel.countDocuments();
+    let couponSeeded = false;
+    if (couponCount === 0) {
+      await CouponModel.create([
+        {
+          code: 'WELCOME10',
+          description: '10% Welcome discount for new customers',
+          discountType: 'Percentage',
+          discountValue: 10,
+          minPurchaseAmount: 499,
+          maxDiscountAmount: 300,
+          usageLimit: 500,
+          status: 'Active',
+        },
+        {
+          code: 'BATALA10',
+          description: '10% Storewide street wear discount',
+          discountType: 'Percentage',
+          discountValue: 10,
+          minPurchaseAmount: 799,
+          maxDiscountAmount: 500,
+          usageLimit: 1000,
+          status: 'Active',
+        },
+        {
+          code: 'FESTIVE15',
+          description: '15% Festive season special promo',
+          discountType: 'Percentage',
+          discountValue: 15,
+          minPurchaseAmount: 1299,
+          maxDiscountAmount: 750,
+          usageLimit: 200,
+          status: 'Active',
+        },
+        {
+          code: 'BATALA200',
+          description: 'Flat ₹200 OFF on orders above ₹999',
+          discountType: 'Flat',
+          discountValue: 200,
+          minPurchaseAmount: 999,
+          usageLimit: 300,
+          status: 'Active',
+        },
+        {
+          code: 'STREET20',
+          description: '20% Limited Edition drop discount',
+          discountType: 'Percentage',
+          discountValue: 20,
+          minPurchaseAmount: 1999,
+          maxDiscountAmount: 1000,
+          usageLimit: 100,
+          status: 'Active',
+        },
+      ]);
+      couponSeeded = true;
+    }
+
     res.status(200).json({
       status: 'success',
       message: 'Catalog database seed completed successfully',
-      seeded: { categoriesSeeded, ptSeeded, colSeeded, themeSeeded, attrSeeded, prodSeeded, invSeeded },
+      seeded: { categoriesSeeded, ptSeeded, colSeeded, themeSeeded, attrSeeded, prodSeeded, invSeeded, couponSeeded },
     });
   });
 }

@@ -41,7 +41,7 @@ export default function Header({ activeTab = 'all' }: HeaderProps) {
     <header className={`${currentTheme.bg} sticky top-0 z-40 px-4 py-1.5 flex items-center justify-between transition-colors duration-300 shadow-2xs`}>
       {/* Brand */}
       <Link href="/" className="flex items-center">
-        <div className="relative h-8 w-28 sm:w-32 overflow-hidden">
+        <div className="relative h-8 w-28 sm:w-32  overflow-hidden">
           <Image
             src="/logo.png"
             alt="BatalaBandi"

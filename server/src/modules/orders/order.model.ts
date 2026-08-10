@@ -21,6 +21,9 @@ export interface IOrder extends Document {
   paymentStatus: 'Pending' | 'Paid' | 'Failed';
   orderStatus: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
   totalAmount: number;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  razorpaySignature?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -73,6 +76,9 @@ const orderSchema = new Schema<IOrder>(
       required: true,
       min: 0,
     },
+    razorpayOrderId: { type: String, index: true },
+    razorpayPaymentId: { type: String },
+    razorpaySignature: { type: String },
   },
   {
     timestamps: true,

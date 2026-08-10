@@ -58,3 +58,16 @@ export async function getOrderByIdAPI(id: string): Promise<OrderResponse> {
   const res = await apiRequest<{ status: string; data: { order: OrderResponse } }>(`/orders/${id}`);
   return res.data.order;
 }
+
+export async function fetchAdminOrdersAPI(): Promise<OrderResponse[]> {
+  const res = await apiRequest<{ status: string; data: { orders: OrderResponse[] } }>('/orders');
+  return res.data.orders;
+}
+
+export async function updateAdminOrderStatusAPI(id: string, orderStatus: string): Promise<OrderResponse> {
+  const res = await apiRequest<{ status: string; data: { order: OrderResponse } }>(`/orders/${id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ orderStatus }),
+  });
+  return res.data.order;
+}

@@ -9,6 +9,7 @@ import {
   Megaphone,
   BarChart3,
   Settings,
+  BookOpen,
 } from "lucide-react";
 
 export const sidebarItems = [
@@ -89,6 +90,11 @@ export const sidebarItems = [
     title: "Reports",
     href: "/admin/reports",
     icon: BarChart3,
+  },
+  {
+    title: "Docs & Guide",
+    href: "/admin/docs",
+    icon: BookOpen,
   },
   {
     title: "Settings",

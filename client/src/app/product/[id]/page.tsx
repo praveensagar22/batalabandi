@@ -26,6 +26,7 @@ import SizeGuideModal from '@/components/common/SizeGuideModal';
 import BottomNav from '@/components/BottomNav';
 import { formatImageUrl } from '@/lib/api/client';
 import { addToCart } from '@/lib/cart/store';
+import { toggleWishlist, isInWishlist } from '@/lib/wishlist/store';
 import { ProductDetailSkeleton } from '@/components/common/Skeletons';
 
 interface PageProps {
@@ -53,6 +54,7 @@ export default function ProductDetailPage({ params }: PageProps) {
         const found = allProds.find((p) => p.id === id || p.slug === id);
         if (found) {
           setProduct(found);
+          setIsFav(isInWishlist(found.id));
           if (found.colors && found.colors.length > 0) setSelectedColor(found.colors[0]);
           if (found.sizes && found.sizes.length > 0) setSelectedSize(found.sizes[0]);
         }
@@ -153,8 +155,23 @@ export default function ProductDetailPage({ params }: PageProps) {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setIsFav(!isFav)}
-            className="p-1.5 rounded-full bg-stone-100 text-stone-800 transition"
+            onClick={() => {
+              if (!product) return;
+              const added = toggleWishlist({
+                id: product.id,
+                title: product.title,
+                subtitle: product.subtitle,
+                price: product.price,
+                compareAtPrice: product.compareAtPrice,
+                image: galleryImages[0] || product.thumbnail || '',
+                category: product.category,
+                collectionName: product.category,
+                rating: product.rating,
+              });
+              setIsFav(added);
+              showToast(added ? `Saved "${product.title}" to Wishlist! ❤️` : `Removed "${product.title}" from Wishlist`);
+            }}
+            className="p-1.5 rounded-full bg-stone-100 text-stone-800 transition active:scale-90"
             aria-label="Wishlist"
           >
             <Heart className={`w-4 h-4 ${isFav ? 'fill-red-500 text-red-500' : 'text-stone-600'}`} />

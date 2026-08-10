@@ -27,6 +27,7 @@ import cartRoutes from './modules/cart/cart.routes';
 import attributeRoutes from './modules/attributes/attribute.routes';
 import inventoryRoutes from './modules/inventory/inventory.routes';
 import marketingRoutes from './modules/marketing/marketing.routes';
+import paymentRoutes from './modules/payments/payment.routes';
 
 const app: Application = express();
 
@@ -97,6 +98,7 @@ app.use('/api/v1/cart', cartRoutes);
 app.use('/api/v1/attributes', attributeRoutes);
 app.use('/api/v1/inventory', inventoryRoutes);
 app.use('/api/v1/marketing', marketingRoutes);
+app.use('/api/v1/payments', paymentRoutes);
 
 // Unhandled Route Handler
 app.all('*', (req: Request, res: Response, next: NextFunction) => {
