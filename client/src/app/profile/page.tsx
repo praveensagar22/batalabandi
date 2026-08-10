@@ -103,23 +103,23 @@ export default function ProfilePage() {
       <main className="mx-auto flex max-w-5xl flex-col gap-4 px-4 pb-24 pt-4 sm:px-6 sm:pt-6">
         {/* User Card */}
         <section className="rounded-[28px] border border-stone-200 bg-white p-4 shadow-sm sm:p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#facc15] text-2xl font-black text-stone-900 shadow-sm">
-                {user ? user.name.charAt(0).toUpperCase() : <UserRound className="w-8 h-8 text-stone-800" />}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+              <div className="flex h-14 w-14 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-full bg-[#facc15] text-xl sm:text-2xl font-black text-stone-900 shadow-sm">
+                {user ? user.name.charAt(0).toUpperCase() : <UserRound className="w-7 h-7 sm:w-8 sm:h-8 text-stone-800" />}
               </div>
 
               <div className="min-w-0 flex-1">
-                <h1 className="text-xl font-black tracking-tight">
+                <h1 className="text-lg sm:text-xl font-black tracking-tight text-stone-950 truncate">
                   {user ? user.name : 'Guest User'}
                 </h1>
-                <p className="mt-0.5 text-xs text-stone-500 font-semibold">
+                <p className="mt-0.5 text-xs text-stone-500 font-semibold truncate" title={user ? user.email : ''}>
                   {user ? user.email : 'Log in to sync your cart & track orders'}
                 </p>
               </div>
             </div>
 
-            <div>
+            <div className="shrink-0">
               {user ? (
                 <button
                   onClick={handleLogout}
@@ -131,10 +131,10 @@ export default function ProfilePage() {
               ) : (
                 <button
                   onClick={() => setShowAuthModal(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-black text-stone-950 bg-amber-400 hover:bg-amber-300 rounded-2xl shadow-sm transition active:scale-95"
+                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-black text-stone-950 bg-amber-400 hover:bg-amber-300 rounded-2xl shadow-sm transition active:scale-95"
                 >
                   <LogIn className="w-4 h-4" />
-                  <span>Log In / Register</span>
+                  <span>Log In</span>
                 </button>
               )}
             </div>
