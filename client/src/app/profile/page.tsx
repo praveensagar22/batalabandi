@@ -14,11 +14,14 @@ import {
   UserRound,
   Wallet2,
   Clock,
-  CheckCircle2,
+  LogOut,
+  LogIn,
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import Header from '@/components/Header';
+import AuthModal from '@/components/common/AuthModal';
 import { getMyOrdersAPI, OrderResponse } from '@/lib/api/orders';
+import { getStoredUser, logoutAPI, UserProfile, getMeAPI } from '@/lib/api/auth';
 
 const quickLinks = [
   {
@@ -57,59 +60,98 @@ const accountSections = [
 ];
 
 export default function ProfilePage() {
-  const userName = 'Aarav Sharma';
-  const phoneNumber = '+91 98765 43210';
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [orders, setOrders] = useState<OrderResponse[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
-  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  async function loadUserAndOrders() {
+    setLoadingOrders(true);
+    const stored = getStoredUser();
+    setUser(stored);
+
+    // Verify token with server
+    const serverUser = await getMeAPI();
+    if (serverUser) {
+      setUser(serverUser);
+    }
+
+    try {
+      const data = await getMyOrdersAPI();
+      setOrders(data);
+    } catch (err) {
+      console.warn('Failed to load user orders:', err);
+    } finally {
+      setLoadingOrders(false);
+    }
+  }
 
   useEffect(() => {
-    async function loadOrders() {
-      try {
-        const data = await getMyOrdersAPI();
-        setOrders(data);
-      } catch (err) {
-        console.warn('Failed to load user orders:', err);
-      } finally {
-        setLoadingOrders(false);
-      }
-    }
-    loadOrders();
+    loadUserAndOrders();
   }, []);
+
+  const handleLogout = async () => {
+    await logoutAPI();
+    setUser(null);
+    setOrders([]);
+  };
 
   return (
     <div className="min-h-screen bg-[#fefce8] text-stone-900 font-sans">
       <Header activeTab="all" />
 
       <main className="mx-auto flex max-w-5xl flex-col gap-4 px-4 pb-24 pt-4 sm:px-6 sm:pt-6">
+        {/* User Card */}
         <section className="rounded-[28px] border border-stone-200 bg-white p-4 shadow-sm sm:p-6">
-          <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#facc15] text-2xl font-black text-stone-900 shadow-sm">
-              {userName.charAt(0)}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#facc15] text-2xl font-black text-stone-900 shadow-sm">
+                {user ? user.name.charAt(0).toUpperCase() : <UserRound className="w-8 h-8 text-stone-800" />}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl font-black tracking-tight">
+                  {user ? user.name : 'Guest User'}
+                </h1>
+                <p className="mt-0.5 text-xs text-stone-500 font-semibold">
+                  {user ? user.email : 'Log in to sync your cart & track orders'}
+                </p>
+              </div>
             </div>
 
-            <div className="min-w-0 flex-1">
-              <h1 className="text-xl font-black tracking-tight">{userName}</h1>
-              <p className="mt-1 text-sm text-stone-600">{phoneNumber}</p>
+            <div>
+              {user ? (
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-2xl border border-red-200 transition active:scale-95"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Logout</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowAuthModal(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-black text-stone-950 bg-amber-400 hover:bg-amber-300 rounded-2xl shadow-sm transition active:scale-95"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>Log In / Register</span>
+                </button>
+              )}
             </div>
           </div>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            <button
-              onClick={() => setShowOrderModal(true)}
-              className="rounded-2xl border border-stone-200 bg-stone-50 p-3 text-left hover:border-amber-400 transition"
-            >
+            <div className="rounded-2xl border border-stone-200 bg-stone-50 p-3">
               <div className="flex items-center justify-between text-sm font-semibold text-stone-700">
                 <span className="flex items-center gap-2">
                   <ClipboardList className="h-4 w-4 text-[#f59e0b]" />
                   Orders
                 </span>
-                <ChevronRight className="w-3.5 h-3.5 text-stone-400" />
               </div>
               <p className="mt-2 text-2xl font-black text-stone-900">
                 {loadingOrders ? '...' : orders.length}
               </p>
-            </button>
+            </div>
 
             <div className="rounded-2xl border border-stone-200 bg-stone-50 p-3">
               <div className="flex items-center gap-2 text-sm font-semibold text-stone-700">
@@ -129,14 +171,12 @@ export default function ProfilePage() {
           </div>
         </section>
 
+        {/* Quick Links */}
         <section className="grid gap-3 md:grid-cols-2">
-          {quickLinks.map(({ id, title, subtitle, icon: Icon, accent }) => (
+          {quickLinks.map(({ title, subtitle, icon: Icon, accent }) => (
             <button
               key={title}
               type="button"
-              onClick={() => {
-                if (id === 'orders') setShowOrderModal(true);
-              }}
               className="flex items-center justify-between rounded-[24px] border border-stone-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
             >
               <div className="flex items-center gap-3">
@@ -205,6 +245,7 @@ export default function ProfilePage() {
           )}
         </section>
 
+        {/* Account Sections */}
         <section className="space-y-3">
           {accountSections.map((section) => (
             <div key={section.title} className="rounded-[24px] border border-stone-200 bg-white p-3 shadow-sm sm:p-4">
@@ -233,6 +274,16 @@ export default function ProfilePage() {
           ))}
         </section>
       </main>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={(u) => {
+          setUser(u);
+          loadUserAndOrders();
+        }}
+      />
 
       <BottomNav />
     </div>
