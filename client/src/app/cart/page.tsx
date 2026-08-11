@@ -18,9 +18,12 @@ import {
   Sparkles,
   Server,
   Loader2,
+  Lock,
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BottomNav from '@/components/BottomNav';
+import DesktopHeader from '@/components/DesktopHeader';
+import DesktopFooter from '@/components/DesktopFooter';
 import {
   getCart,
   getLocalCart,
@@ -137,20 +140,49 @@ export default function CartPage() {
   const items = backendData?.items || [];
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(250,204,21,0.12),_transparent_40%),linear-gradient(180deg,#fffdf7_0%,#fefce8_100%)] font-sans text-stone-900 pb-28">
+    <div className="min-h-screen bg-[#faf9f6] font-sans text-stone-900 selection:bg-amber-400 selection:text-stone-950">
       {/* Toast Notification */}
       {toastMsg && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-stone-950 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-lg flex items-center gap-2 animate-bounce border border-amber-400">
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-stone-950 text-white text-xs font-bold px-5 py-3 rounded-full shadow-2xl flex items-center gap-2 border border-amber-400 animate-bounce">
           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           <span>{toastMsg}</span>
         </div>
       )}
 
-      <Header activeTab="all" />
+      {/* ===== DESKTOP HEADER (>= 768px) ===== */}
+      <div className="hidden md:block">
+        <DesktopHeader />
+      </div>
 
-      <main className="px-4 pb-24 pt-4 max-w-md mx-auto">
-        {/* Top Header Card */}
-        <section className="rounded-3xl border border-stone-200 bg-white/90 p-4 shadow-xs backdrop-blur mb-4">
+      {/* ===== MOBILE HEADER (< 768px) ===== */}
+      <div className="block md:hidden">
+        <Header activeTab="all" />
+      </div>
+
+      {/* ===== MAIN CONTENT ===== */}
+      <main className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-10">
+        {/* Desktop Breadcrumb & Header */}
+        <div className="hidden md:flex items-center justify-between pb-6 border-b border-stone-200 mb-8">
+          <div>
+            <div className="flex items-center gap-2 text-xs text-stone-400 font-semibold mb-2">
+              <Link href="/" className="hover:text-stone-950 transition-colors">Home</Link>
+              <ChevronRight className="w-3.5 h-3.5" />
+              <span className="text-stone-900 font-bold">Shopping Bag</span>
+            </div>
+            <h1 className="text-3xl font-black font-serif text-stone-950 flex items-center gap-2">
+              <ShoppingBag className="w-7 h-7 text-amber-500" />
+              Shopping Bag ({summary?.itemCount || rawItems.length})
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-200 px-4 py-2 rounded-2xl text-xs font-bold">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <span>100% Server Calculated & SSL Encrypted</span>
+          </div>
+        </div>
+
+        {/* Mobile Header Card */}
+        <section className="block md:hidden rounded-3xl border border-stone-200 bg-white/90 p-4 shadow-xs backdrop-blur mb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Link
@@ -163,7 +195,7 @@ export default function CartPage() {
                 <h1 className="text-lg font-black text-stone-950">Shopping Bag</h1>
                 <p className="text-[10px] font-bold text-stone-500 flex items-center gap-1">
                   <Server className="w-3 h-3 text-amber-600" />
-                  <span>100% Server Calculated • {summary?.itemCount || rawItems.length} Items</span>
+                  <span>Server Calculated • {summary?.itemCount || rawItems.length} Items</span>
                 </p>
               </div>
             </div>
@@ -181,11 +213,11 @@ export default function CartPage() {
           <>
             {/* Free Shipping Progress Indicator */}
             {summary && (
-              <div className="mb-4 bg-amber-50 border border-amber-200/90 rounded-2xl p-3 flex items-center gap-2.5 text-xs text-amber-950 font-bold shadow-2xs">
-                <Truck className="w-4 h-4 text-amber-700 shrink-0" />
+              <div className="mb-6 bg-amber-50 border border-amber-200/90 rounded-2xl p-4 flex items-center gap-3 text-xs md:text-sm text-amber-950 font-bold shadow-2xs">
+                <Truck className="w-5 h-5 text-amber-700 shrink-0" />
                 <span>
                   {summary.isFreeShipping ? (
-                    <strong className="text-emerald-700">🎉 Congratulations! You unlocked FREE Delivery!</strong>
+                    <strong className="text-emerald-700">🎉 Congratulations! You unlocked FREE Delivery across India!</strong>
                   ) : (
                     `Add ₹${summary.amountForFreeShipping.toLocaleString('en-IN')} more to unlock FREE Delivery!`
                   )}
@@ -193,217 +225,243 @@ export default function CartPage() {
               </div>
             )}
 
-            {/* Cart Items List */}
-            <div className="space-y-3 mb-4 relative">
-              {isCalculating && (
-                <div className="absolute inset-0 bg-white/60 backdrop-blur-2xs z-20 flex items-center justify-center rounded-2xl">
-                  <Loader2 className="w-6 h-6 text-amber-600 animate-spin" />
-                </div>
-              )}
+            {/* 2-Column Responsive Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              {/* ===== LEFT CART ITEMS LIST (8 COLS ON DESKTOP) ===== */}
+              <div className="lg:col-span-8 space-y-4 relative">
+                {isCalculating && (
+                  <div className="absolute inset-0 bg-white/60 backdrop-blur-2xs z-20 flex items-center justify-center rounded-3xl">
+                    <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
+                  </div>
+                )}
 
-              {(items.length > 0 ? items : rawItems).map((item) => {
-                const imageSrc = formatImageUrl(item.image);
-                const price = item.price;
-                const compareAtPrice = item.compareAtPrice;
-                const itemTotal = price * item.quantity;
-                const itemOriginalTotal = (compareAtPrice || price) * item.quantity;
-                const hasDiscount = compareAtPrice && compareAtPrice > price;
-                const targetId = item.productId || item.id;
+                {(items.length > 0 ? items : rawItems).map((item) => {
+                  const imageSrc = formatImageUrl(item.image);
+                  const price = item.price;
+                  const compareAtPrice = item.compareAtPrice;
+                  const itemTotal = price * item.quantity;
+                  const itemOriginalTotal = (compareAtPrice || price) * item.quantity;
+                  const hasDiscount = compareAtPrice && compareAtPrice > price;
+                  const targetId = item.productId || item.id;
 
-                return (
-                  <div
-                    key={item.id}
-                    className="bg-white rounded-2xl p-3 border border-stone-200/90 shadow-2xs flex gap-3 relative"
-                  >
-                    {/* Item Image */}
-                    <div className="relative w-20 h-24 rounded-xl overflow-hidden bg-stone-100 shrink-0">
-                      <Image
-                        src={imageSrc}
-                        alt={item.title}
-                        fill
-                        unoptimized
-                        className="object-cover"
+                  return (
+                    <div
+                      key={item.id}
+                      className="bg-white rounded-3xl p-4 md:p-5 border border-stone-200/90 shadow-2xs flex gap-4 md:gap-6 relative hover:shadow-md transition"
+                    >
+                      {/* Item Image */}
+                      <div className="relative w-24 h-28 md:w-32 md:h-36 rounded-2xl overflow-hidden bg-stone-100 shrink-0">
+                        <Image
+                          src={imageSrc}
+                          alt={item.title}
+                          fill
+                          unoptimized
+                          className="object-cover"
+                        />
+                      </div>
+
+                      {/* Item Content */}
+                      <div className="flex-1 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <h3 className="text-sm md:text-base font-extrabold text-stone-950 line-clamp-1">
+                                {item.title}
+                              </h3>
+                              {item.subtitle && (
+                                <p className="text-xs text-stone-400 font-medium line-clamp-1 mt-0.5">
+                                  {item.subtitle}
+                                </p>
+                              )}
+                            </div>
+
+                            <button
+                              onClick={() => handleRemove(targetId, item.title)}
+                              aria-label="Remove item"
+                              className="text-stone-400 hover:text-red-500 p-2 rounded-xl hover:bg-stone-100 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
+                            </button>
+                          </div>
+
+                          {/* Size & Color Tags */}
+                          <div className="flex items-center gap-2 mt-2.5">
+                            {item.size && (
+                              <span className="bg-stone-100 text-stone-800 text-xs font-bold px-2.5 py-1 rounded-lg border border-stone-200">
+                                Size: {item.size}
+                              </span>
+                            )}
+                            {item.color && (
+                              <span className="bg-stone-100 text-stone-800 text-xs font-bold px-2.5 py-1 rounded-lg border border-stone-200">
+                                Color: {item.color}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Quantity & Price Row */}
+                        <div className="flex items-center justify-between mt-4 pt-3 border-t border-stone-100">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-sm md:text-lg font-black text-stone-950 font-mono">
+                              ₹{itemTotal.toLocaleString('en-IN')}
+                            </span>
+                            {hasDiscount && (
+                              <span className="text-xs font-bold text-stone-400 line-through font-mono">
+                                ₹{itemOriginalTotal.toLocaleString('en-IN')}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Quantity Controls */}
+                          <div className="flex items-center gap-3 bg-stone-100 rounded-xl px-3 py-1.5 border border-stone-200">
+                            <button
+                              type="button"
+                              onClick={() => handleQuantityChange(targetId, item.quantity - 1)}
+                              className="w-7 h-7 rounded-lg bg-white flex items-center justify-center text-stone-800 text-xs font-black shadow-2xs active:scale-90 hover:bg-stone-50"
+                            >
+                              <Minus className="w-3.5 h-3.5" />
+                            </button>
+                            <span className="text-xs md:text-sm font-black text-stone-900 w-5 text-center">
+                              {item.quantity}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleQuantityChange(targetId, item.quantity + 1)}
+                              className="w-7 h-7 rounded-lg bg-white flex items-center justify-center text-stone-800 text-xs font-black shadow-2xs active:scale-90 hover:bg-stone-50"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* ===== RIGHT ORDER SUMMARY (4 COLS ON DESKTOP) ===== */}
+              <div className="lg:col-span-4 space-y-4 sticky top-24">
+                {/* Coupon Code Section */}
+                <div className="bg-white rounded-3xl p-5 border border-stone-200/90 shadow-2xs">
+                  <h4 className="text-xs font-black text-stone-950 uppercase tracking-wider mb-3">
+                    Have a Coupon Code?
+                  </h4>
+                  <form onSubmit={handleApplyCoupon} className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <Tag className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-600" />
+                      <input
+                        type="text"
+                        value={couponInput}
+                        onChange={(e) => setCouponInput(e.target.value)}
+                        placeholder="e.g. WELCOME10"
+                        className="w-full pl-10 pr-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-bold uppercase placeholder:capitalize placeholder:text-stone-400 focus:outline-none focus:border-amber-400"
                       />
                     </div>
+                    <button
+                      type="submit"
+                      disabled={isCalculating}
+                      className="px-5 py-2.5 bg-stone-950 hover:bg-stone-800 text-white text-xs font-black rounded-xl shadow-xs transition-colors shrink-0 disabled:opacity-50"
+                    >
+                      {isCalculating ? 'Verifying...' : 'Apply'}
+                    </button>
+                  </form>
 
-                    {/* Item Content */}
-                    <div className="flex-1 flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-start justify-between gap-1">
-                          <h3 className="text-xs font-extrabold text-stone-950 line-clamp-1">
-                            {item.title}
-                          </h3>
-                          <button
-                            onClick={() => handleRemove(targetId, item.title)}
-                            aria-label="Remove item"
-                            className="text-stone-400 hover:text-red-500 p-1 rounded-lg hover:bg-stone-100 transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                  {backendData?.coupon?.isValid && (
+                    <div className="mt-3 flex items-center justify-between bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-xl text-xs text-emerald-900 font-bold">
+                      <span className="flex items-center gap-1.5">
+                        <Sparkles className="w-4 h-4 text-emerald-600" /> {backendData.coupon.message}
+                      </span>
+                      <button
+                        onClick={handleRemoveCoupon}
+                        className="text-xs text-emerald-700 underline font-extrabold"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
 
-                        {item.subtitle && (
-                          <p className="text-[10px] text-stone-400 font-medium line-clamp-1 mt-0.5">
-                            {item.subtitle}
-                          </p>
-                        )}
+                {/* Server-Side Bill Details Breakdown Card */}
+                {summary && (
+                  <div className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-2xs space-y-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+                      <h3 className="text-sm font-black text-stone-950 uppercase tracking-wider">
+                        Order Summary
+                      </h3>
+                      <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200 flex items-center gap-1">
+                        <Server className="w-3 h-3 text-amber-600" /> API Validated
+                      </span>
+                    </div>
 
-                        {/* Size & Color Tags */}
-                        <div className="flex items-center gap-1.5 mt-1.5">
-                          {item.size && (
-                            <span className="bg-stone-100 text-stone-800 text-[9.5px] font-bold px-2 py-0.5 rounded-md border border-stone-200">
-                              Size: {item.size}
-                            </span>
-                          )}
-                          {item.color && (
-                            <span className="bg-stone-100 text-stone-800 text-[9.5px] font-bold px-2 py-0.5 rounded-md border border-stone-200">
-                              {item.color}
-                            </span>
-                          )}
-                        </div>
+                    <div className="space-y-3 text-xs text-stone-600 font-medium">
+                      <div className="flex items-center justify-between">
+                        <span>Total MRP (Original Price)</span>
+                        <span className="font-mono font-bold text-stone-900">
+                          ₹{summary.originalTotal.toLocaleString('en-IN')}
+                        </span>
                       </div>
 
-                      {/* Quantity & Price Row */}
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-stone-100">
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs font-black text-stone-950 font-mono">
-                            ₹{itemTotal.toLocaleString('en-IN')}
-                          </span>
-                          {hasDiscount && (
-                            <span className="text-[9.5px] font-bold text-stone-400 line-through font-mono">
-                              ₹{itemOriginalTotal.toLocaleString('en-IN')}
-                            </span>
-                          )}
+                      {summary.productDiscount > 0 && (
+                        <div className="flex items-center justify-between text-emerald-700 font-bold">
+                          <span>Product Discount</span>
+                          <span className="font-mono">-₹{summary.productDiscount.toLocaleString('en-IN')}</span>
                         </div>
+                      )}
 
-                        {/* Quantity Controls */}
-                        <div className="flex items-center gap-2 bg-stone-100 rounded-xl px-2 py-1 border border-stone-200">
-                          <button
-                            type="button"
-                            onClick={() => handleQuantityChange(targetId, item.quantity - 1)}
-                            className="w-6 h-6 rounded-md bg-white flex items-center justify-center text-stone-800 text-xs font-black shadow-2xs active:scale-90 hover:bg-stone-50"
-                          >
-                            <Minus className="w-3.5 h-3.5" />
-                          </button>
-                          <span className="text-xs font-black text-stone-900 w-4 text-center">
-                            {item.quantity}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleQuantityChange(targetId, item.quantity + 1)}
-                            className="w-6 h-6 rounded-md bg-white flex items-center justify-center text-stone-800 text-xs font-black shadow-2xs active:scale-90 hover:bg-stone-50"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                          </button>
+                      {summary.couponDiscount > 0 && (
+                        <div className="flex items-center justify-between text-emerald-700 font-bold">
+                          <span>Coupon Discount ({backendData?.coupon?.code})</span>
+                          <span className="font-mono">-₹{summary.couponDiscount.toLocaleString('en-IN')}</span>
                         </div>
+                      )}
+
+                      <div className="flex items-center justify-between">
+                        <span>Delivery Shipping Fee</span>
+                        <span>
+                          {summary.shippingFee === 0 ? (
+                            <strong className="text-emerald-700 uppercase">FREE</strong>
+                          ) : (
+                            <span className="font-mono font-bold">₹{summary.shippingFee}</span>
+                          )}
+                        </span>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
 
-            {/* Coupon Code Section */}
-            <div className="bg-white rounded-2xl p-3 border border-stone-200/90 shadow-2xs mb-4">
-              <form onSubmit={handleApplyCoupon} className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-600" />
-                  <input
-                    type="text"
-                    value={couponInput}
-                    onChange={(e) => setCouponInput(e.target.value)}
-                    placeholder="Enter Coupon (e.g. WELCOME10)"
-                    className="w-full pl-9 pr-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-bold uppercase placeholder:capitalize placeholder:text-stone-400 focus:outline-none"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={isCalculating}
-                  className="px-4 py-2 bg-stone-950 hover:bg-stone-800 text-white text-xs font-black rounded-xl shadow-xs transition-colors shrink-0 disabled:opacity-50"
-                >
-                  {isCalculating ? 'Verifying...' : 'Apply'}
-                </button>
-              </form>
+                    <div className="flex items-center justify-between text-base font-black text-stone-950 pt-4 border-t border-stone-200">
+                      <span>Total Amount Payable</span>
+                      <span className="text-amber-600 font-mono text-xl">
+                        ₹{summary.finalTotal.toLocaleString('en-IN')}
+                      </span>
+                    </div>
 
-              {backendData?.coupon?.isValid && (
-                <div className="mt-2.5 flex items-center justify-between bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl text-xs text-emerald-900 font-bold">
-                  <span className="flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-600" /> {backendData.coupon.message}
-                  </span>
-                  <button
-                    onClick={handleRemoveCoupon}
-                    className="text-[10px] text-emerald-700 underline font-extrabold"
-                  >
-                    Remove
-                  </button>
-                </div>
-              )}
-            </div>
+                    <Link
+                      href="/checkout"
+                      className="w-full py-4 bg-[#facc15] hover:bg-[#eab308] text-stone-950 text-xs md:text-sm font-black rounded-2xl transition flex items-center justify-center gap-1.5 shadow-md active:scale-98"
+                    >
+                      <span>Proceed to Checkout</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </Link>
 
-            {/* Server-Side Bill Details Breakdown Card */}
-            {summary && (
-              <div className="bg-white rounded-2xl p-4 border border-stone-200/90 shadow-2xs mb-6 space-y-2.5 relative">
-                <div className="flex items-center justify-between pb-2 border-b border-stone-100">
-                  <h3 className="text-xs font-black text-stone-950 uppercase tracking-wider">
-                    Server Bill Breakdown
-                  </h3>
-                  <span className="text-[9.5px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 flex items-center gap-1">
-                    <Server className="w-3 h-3 text-amber-600" /> API Validated
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between text-xs text-stone-600 font-medium">
-                  <span>Total MRP (Original Price)</span>
-                  <span className="font-mono font-bold text-stone-900">
-                    ₹{summary.originalTotal.toLocaleString('en-IN')}
-                  </span>
-                </div>
-
-                {summary.productDiscount > 0 && (
-                  <div className="flex items-center justify-between text-xs text-emerald-700 font-bold">
-                    <span>Product Discount</span>
-                    <span className="font-mono">-₹{summary.productDiscount.toLocaleString('en-IN')}</span>
+                    <div className="flex items-center justify-center gap-2 text-[11px] text-stone-400 font-semibold pt-1">
+                      <Lock className="w-3.5 h-3.5 text-stone-500" />
+                      <span>Encrypted SSL 256-Bit Checkout</span>
+                    </div>
                   </div>
                 )}
-
-                {summary.couponDiscount > 0 && (
-                  <div className="flex items-center justify-between text-xs text-emerald-700 font-bold">
-                    <span>Coupon Discount ({backendData?.coupon?.code})</span>
-                    <span className="font-mono">-₹{summary.couponDiscount.toLocaleString('en-IN')}</span>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between text-xs text-stone-600 font-medium">
-                  <span>Delivery Fee</span>
-                  <span>
-                    {summary.shippingFee === 0 ? (
-                      <strong className="text-emerald-700 uppercase text-[10.5px]">FREE</strong>
-                    ) : (
-                      <span className="font-mono font-bold">₹{summary.shippingFee}</span>
-                    )}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between text-sm font-black text-stone-950 pt-2.5 border-t border-stone-200">
-                  <span>Total Amount Payable</span>
-                  <span className="text-amber-600 font-mono text-base">
-                    ₹{summary.finalTotal.toLocaleString('en-IN')}
-                  </span>
-                </div>
               </div>
-            )}
+            </div>
           </>
         ) : (
           /* Empty Bag State */
-          <div className="py-16 text-center bg-white rounded-3xl border border-stone-200 p-6 space-y-3 shadow-2xs mb-6">
-            <ShoppingBag className="w-12 h-12 text-stone-300 mx-auto" />
-            <h2 className="text-base font-black text-stone-950">Your Shopping Bag is empty</h2>
+          <div className="py-20 text-center bg-white rounded-3xl border border-stone-200 p-8 space-y-4 shadow-2xs max-w-lg mx-auto">
+            <ShoppingBag className="w-16 h-16 text-stone-300 mx-auto" />
+            <h2 className="text-xl font-black text-stone-950">Your Shopping Bag is empty</h2>
             <p className="text-xs text-stone-500 max-w-xs mx-auto">
               Explore our handcrafted collections and add your favorite apparel to the bag!
             </p>
             <Link
               href="/categories"
-              className="inline-flex items-center gap-1 px-5 py-2.5 bg-[#facc15] text-stone-950 text-xs font-black rounded-xl shadow-xs active:scale-95 transition-all mt-2"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#facc15] text-stone-950 text-xs font-black rounded-xl shadow-xs hover:bg-[#eab308] active:scale-95 transition-all mt-2"
             >
               Start Shopping <ChevronRight className="w-4 h-4" />
             </Link>
@@ -411,9 +469,9 @@ export default function CartPage() {
         )}
       </main>
 
-      {/* Fixed Bottom Checkout Action Bar */}
+      {/* ===== MOBILE FIXED BOTTOM CHECKOUT BAR (< 768px) ===== */}
       {rawItems.length > 0 && summary && (
-        <div className="fixed bottom-12 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200 p-3 px-4 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] max-w-md mx-auto flex items-center justify-between gap-3">
+        <div className="block md:hidden fixed bottom-12 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200 p-3 px-4 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] max-w-md mx-auto flex items-center justify-between gap-3">
           <div>
             <span className="text-[9.5px] text-stone-400 font-bold block uppercase tracking-wider">
               Total Payable (API)
@@ -433,7 +491,15 @@ export default function CartPage() {
         </div>
       )}
 
-      <BottomNav />
+      {/* Mobile Dock Navigation */}
+      <div className="block md:hidden">
+        <BottomNav />
+      </div>
+
+      {/* ===== DESKTOP FOOTER (>= 768px) ===== */}
+      <div className="hidden md:block">
+        <DesktopFooter />
+      </div>
     </div>
   );
 }

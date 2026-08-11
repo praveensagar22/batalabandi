@@ -18,30 +18,68 @@ export async function seedCatalogDB() {
 // ----------------------------------------------------
 // CATEGORIES API
 // ----------------------------------------------------
+const CATEGORY_IMAGE_MAP: Record<string, string> = {
+  men: 'https://images.unsplash.com/photo-1490578474895-699cd4e2cf59?auto=format&fit=crop&w=400&q=80',
+  women: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=400&q=80',
+  unisex: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=400&q=80',
+  tops: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=400&q=80',
+  'men-tops': 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=400&q=80',
+  'women-tops': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+  'unisex-tops': 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=400&q=80',
+  shirts: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=400&q=80',
+  'men-shirts': 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=400&q=80',
+  'women-shirts': 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=400&q=80',
+  hoodies: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=400&q=80',
+  'men-hoodies': 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=400&q=80',
+  'women-hoodies': 'https://images.unsplash.com/photo-1509967419530-da38b4704bc6?auto=format&fit=crop&w=400&q=80',
+  'oversized-tshirts': 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=400&q=80',
+  'men-oversized-tshirts': 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=400&q=80',
+  'unisex-oversized-tees': 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?auto=format&fit=crop&w=400&q=80',
+  bottoms: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&w=400&q=80',
+  'men-bottoms': 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&w=400&q=80',
+  joggers: 'https://images.unsplash.com/photo-1552902865-b72c031ac5ea?auto=format&fit=crop&w=400&q=80',
+  'men-joggers': 'https://images.unsplash.com/photo-1552902865-b72c031ac5ea?auto=format&fit=crop&w=400&q=80',
+  ethnic: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=400&q=80',
+  'women-ethnic': 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=400&q=80',
+  sarees: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=400&q=80',
+  'women-sarees-dupattas': 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=400&q=80',
+};
+
 export async function fetchCategoriesAPI(): Promise<Category[]> {
   const response = await apiRequest<{ data: { categories: any[] } }>('/categories');
-  return response.data.categories.map((c) => ({
-    id: c._id || c.id,
-    name: c.name,
-    slug: c.slug,
-    description: c.description || '',
-    parentId: c.parentId || null,
-    gender: c.gender || 'Unisex',
-    level: c.level || 0,
-    productsCount: c.productsCount || 0,
-    status: c.status || 'Active',
-    sortOrder: c.sortOrder || 1,
-    image: formatImageUrl(c.image || ''),
-    banner: formatImageUrl(c.banner || ''),
-    icon: c.icon || 'Tag',
-    color: c.color || '#facc15',
-    showOnHomepage: c.showOnHomepage ?? true,
-    featured: c.featured ?? false,
-    showInNav: c.showInNav ?? true,
-    displayPriority: c.displayPriority || 5,
-    seo: c.seo || { metaTitle: '', metaDescription: '', keywords: '' },
-    children: [],
-  }));
+  return response.data.categories.map((c) => {
+    const rawImage = c.image || '';
+    const fallbackImage =
+      CATEGORY_IMAGE_MAP[c.slug] ||
+      CATEGORY_IMAGE_MAP[c.name.toLowerCase()] ||
+      'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=400&q=80';
+
+    const finalImage = rawImage ? formatImageUrl(rawImage) : fallbackImage;
+    const finalBanner = c.banner ? formatImageUrl(c.banner) : finalImage;
+
+    return {
+      id: c._id || c.id,
+      name: c.name,
+      slug: c.slug,
+      description: c.description || '',
+      parentId: c.parentId || null,
+      gender: c.gender || 'Unisex',
+      level: c.level || 0,
+      productsCount: c.productsCount || 0,
+      status: c.status || 'Active',
+      sortOrder: c.sortOrder || 1,
+      image: finalImage,
+      banner: finalBanner,
+      icon: c.icon || 'Tag',
+      color: c.color || '#facc15',
+      showOnHomepage: c.showOnHomepage ?? true,
+      featured: c.featured ?? false,
+      showInNav: c.showInNav ?? true,
+      displayPriority: c.displayPriority || 5,
+      seo: c.seo || { metaTitle: '', metaDescription: '', keywords: '' },
+      children: [],
+    };
+  });
 }
 
 export async function createCategoryAPI(data: Partial<Category>): Promise<Category> {

@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, ChevronRight } from 'lucide-react';
 import Header from '@/components/Header';
 import BottomNav from '@/components/BottomNav';
+import DesktopHeader from '@/components/DesktopHeader';
+import DesktopFooter from '@/components/DesktopFooter';
 import { fetchCategoriesAPI } from '@/lib/api/catalog';
 import { Category } from '@/lib/categories/types';
 import { formatImageUrl } from '@/lib/api/client';
@@ -65,7 +67,6 @@ const tabConfigs: Record<TabKey, { title: string; subtitle: string; accent: stri
   },
 };
 
-// Robust Transformer: Group flat backend Category[] into UI TabData structure
 function transformBackendCategories(apiCategories: Category[]): Record<TabKey, TabData> {
   const result: Record<TabKey, TabData> = {
     men: { ...tabConfigs.men, sections: [] },
@@ -76,7 +77,6 @@ function transformBackendCategories(apiCategories: Category[]): Record<TabKey, T
   (['men', 'women', 'unisex'] as TabKey[]).forEach((tabKey) => {
     const targetGender = tabKey === 'men' ? 'Men' : tabKey === 'women' ? 'Women' : 'Unisex';
 
-    // 1. Filter active categories relevant to this tab
     const matchedCategories = apiCategories.filter((c) => {
       if (c.status === 'Inactive') return false;
       if (tabKey === 'unisex') {
@@ -86,21 +86,16 @@ function transformBackendCategories(apiCategories: Category[]): Record<TabKey, T
     });
 
     if (matchedCategories.length === 0) {
-      // Fallback if no specific gender match, include all active categories
       matchedCategories.push(...apiCategories.filter((c) => c.status !== 'Inactive'));
     }
 
-    // 2. Identify parents vs children vs standalone categories
     const parents = matchedCategories.filter((c) => c.level === 1);
     const children = matchedCategories.filter((c) => c.level === 2);
-    const level0OrOther = matchedCategories.filter((c) => c.level !== 1 && c.level !== 2);
 
     const sections: CategorySection[] = [];
 
-    // Case A: Structured Parents & Children exist
     if (parents.length > 0) {
       parents.forEach((parent) => {
-        // Find children belonging to this parent (by parentId, slug, or ID)
         const parentIdOrSlug = parent.slug || parent.id;
         const subItems = children.filter(
           (child) =>
@@ -129,7 +124,6 @@ function transformBackendCategories(apiCategories: Category[]): Record<TabKey, T
       });
     }
 
-    // Case B: Add any remaining children or standalone categories not grouped above
     const groupedIds = new Set(sections.flatMap((s) => s.items.map((i) => i.id)));
     const unmapped = matchedCategories.filter((c) => !groupedIds.has(c.id) && c.level !== 0);
 
@@ -151,7 +145,6 @@ function transformBackendCategories(apiCategories: Category[]): Record<TabKey, T
       });
     }
 
-    // Case C: If still no sections, render all matched categories directly
     if (sections.length === 0 && matchedCategories.length > 0) {
       const allItems: CategoryItem[] = matchedCategories.map((item, idx) => ({
         id: item.id,
@@ -202,32 +195,48 @@ export default function CategoriesPage() {
   const activeContent = tabData ? tabData[activeTab] : { ...tabConfigs[activeTab], sections: [] };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(250,204,21,0.14),_transparent_40%),linear-gradient(180deg,#fffdf7_0%,#fefce8_100%)]">
-      <Header activeTab="all" />
+    <div className="min-h-screen bg-[#faf9f6] font-sans selection:bg-amber-400 selection:text-stone-950">
+      {/* ===== DESKTOP HEADER (>= 768px) ===== */}
+      <div className="hidden md:block">
+        <DesktopHeader />
+      </div>
 
-      <main className="px-4 pb-24 pt-4 max-w-md mx-auto">
+      {/* ===== MOBILE HEADER (< 768px) ===== */}
+      <div className="block md:hidden">
+        <Header activeTab="all" />
+      </div>
+
+      {/* ===== MAIN CONTENT ===== */}
+      <main className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-10">
+        {/* Breadcrumbs for Desktop */}
+        <div className="hidden md:flex items-center gap-2 text-xs text-stone-400 font-semibold mb-6">
+          <Link href="/" className="hover:text-stone-950 transition-colors">Home</Link>
+          <ChevronRight className="w-3.5 h-3.5" />
+          <span className="text-stone-900 font-bold">Categories & Styles</span>
+        </div>
+
         {/* Top Header Card */}
-        <section className="rounded-[28px] border border-stone-200 bg-white/90 p-4 shadow-[0_10px_30px_rgba(0,0,0,0.05)] backdrop-blur">
-          <div className={`rounded-[22px] bg-gradient-to-br ${activeContent.accent} p-4`}>
+        <section className="rounded-3xl border border-stone-200 bg-white/90 p-4 md:p-6 shadow-xs backdrop-blur">
+          <div className={`rounded-2xl bg-gradient-to-br ${activeContent.accent} p-4 md:p-6`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-stone-600">Curated styles</p>
-                <h1 className="mt-1 text-xl font-black text-stone-950">{activeContent.title} collection</h1>
+                <p className="text-[11px] md:text-xs font-bold uppercase tracking-[0.3em] text-stone-600">Curated Styles</p>
+                <h1 className="mt-1 text-xl md:text-3xl font-black text-stone-950">{activeContent.title} Collection</h1>
               </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/80 shadow-sm">
-                <Sparkles className="h-5 w-5 text-amber-700" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/80 shadow-sm">
+                <Sparkles className="h-6 w-6 text-amber-700" />
               </div>
             </div>
-            <p className="mt-2 text-sm text-stone-600">{activeContent.subtitle}</p>
+            <p className="mt-2 text-xs md:text-sm text-stone-600 font-medium">{activeContent.subtitle}</p>
           </div>
 
           {/* Men / Women / Unisex Pill Tabs */}
-          <div className="mt-4 flex rounded-full border border-stone-200 bg-stone-50 p-1">
+          <div className="mt-4 flex rounded-2xl border border-stone-200 bg-stone-50 p-1.5 max-w-md">
             {(['men', 'women', 'unisex'] as TabKey[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`flex-1 rounded-full px-3 py-2 text-sm font-semibold transition-all ${
+                className={`flex-1 rounded-xl px-4 py-2.5 text-xs md:text-sm font-black transition-all ${
                   activeTab === tab
                     ? 'bg-stone-950 text-white shadow-sm'
                     : 'text-stone-600 hover:bg-white hover:text-stone-900'
@@ -241,53 +250,57 @@ export default function CategoriesPage() {
 
         {/* Loading Spinner */}
         {isLoading ? (
-          <div className="mt-4">
+          <div className="mt-6">
             <CategoryPageSkeleton />
           </div>
         ) : (
-          /* Sections Grid populated 100% from Backend */
-          <section className="mt-4 space-y-4">
+          /* Sections Grid */
+          <section className="mt-6 space-y-8">
             {activeContent.sections.length > 0 ? (
               activeContent.sections.map((section) => (
-                <div key={section.title} className="rounded-[24px] border border-stone-200 bg-white p-3 shadow-sm">
-                  <div className="flex items-start justify-between gap-2">
+                <div key={section.title} className="rounded-3xl border border-stone-200 bg-white p-5 md:p-8 shadow-xs">
+                  <div className="flex items-start justify-between gap-2 border-b border-stone-100 pb-4 mb-6">
                     <div>
-                      <h2 className="text-base font-black text-stone-900">{section.title}</h2>
-                      <p className="mt-1 text-[12px] text-stone-500">{section.note}</p>
+                      <h2 className="text-lg md:text-xl font-black text-stone-900">{section.title}</h2>
+                      <p className="mt-0.5 text-xs md:text-sm text-stone-500 font-medium">{section.note}</p>
                     </div>
-                    <span className="rounded-full bg-stone-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.25em] text-stone-600">
+                    <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-stone-600 border border-stone-200/60">
                       {section.items.length} styles
                     </span>
                   </div>
 
-                  <div className="mt-3 grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
                     {section.items.map((item) => (
                       <Link
                         key={item.id || item.slug}
                         href={`/categories/${encodeURIComponent(item.slug || item.id || item.name.toLowerCase())}`}
-                        className="block rounded-[20px] border border-stone-200 bg-stone-50 p-2 active:scale-98 transition-transform"
+                        className="block rounded-2xl md:rounded-3xl border border-stone-200/90 bg-stone-50/50 p-3 hover:bg-white hover:shadow-xl hover:-translate-y-1 transition-all group"
                       >
-                        <div className={`relative h-24 overflow-hidden rounded-[16px] bg-gradient-to-br ${item.gradient} p-3`}>
+                        <div className={`relative h-32 md:h-44 overflow-hidden rounded-xl md:rounded-2xl bg-gradient-to-br ${item.gradient} p-3`}>
                           {item.image ? (
                             <Image
                               src={item.image}
                               alt={item.name}
                               fill
                               unoptimized
-                              className="object-cover rounded-[16px]"
+                              className="object-cover rounded-xl md:rounded-2xl group-hover:scale-105 transition-transform duration-500"
                             />
                           ) : (
                             <div className="absolute inset-0 border border-white/50" />
                           )}
                           <div className="relative flex h-full flex-col justify-between z-10">
-                            <span className="w-fit rounded-full bg-white/80 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-stone-800 shadow-xs">
+                            <span className="w-fit rounded-full bg-stone-950/80 backdrop-blur-md px-2.5 py-0.5 text-[9px] md:text-[10px] font-extrabold text-white shadow-xs">
                               {item.badge}
                             </span>
                           </div>
                         </div>
-                        <div className="mt-2">
-                          <h3 className="text-sm font-bold text-stone-900">{item.name}</h3>
-                          <p className="mt-0.5 text-[11px] leading-4 text-stone-500 line-clamp-2">{item.description}</p>
+                        <div className="mt-3 p-1">
+                          <h3 className="text-xs md:text-sm font-extrabold text-stone-900 group-hover:text-amber-600 transition-colors">
+                            {item.name}
+                          </h3>
+                          <p className="mt-0.5 text-[11px] md:text-xs leading-relaxed text-stone-500 line-clamp-2 font-medium">
+                            {item.description}
+                          </p>
                         </div>
                       </Link>
                     ))}
@@ -295,31 +308,23 @@ export default function CategoriesPage() {
                 </div>
               ))
             ) : (
-              <div className="py-12 text-center bg-white rounded-3xl border border-stone-200 p-6 space-y-2">
-                <p className="text-xs font-bold text-stone-800">No categories found in "{tabConfigs[activeTab].title}"</p>
-                <p className="text-[11px] text-stone-500">
-                  Go to Admin CMS &gt; Categories to create categories.
-                </p>
+              <div className="py-16 text-center bg-white rounded-3xl border border-stone-200 p-8 space-y-2 max-w-md mx-auto">
+                <p className="text-sm font-bold text-stone-800">No categories found in "{tabConfigs[activeTab].title}"</p>
               </div>
             )}
           </section>
         )}
-
-        {/* Bottom Ideas Section */}
-        <section className="mt-4 rounded-[24px] border border-dashed border-[#facc15]/70 bg-[#fffdf5] p-3">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <p className="text-sm font-black text-stone-900">Want more ideas?</p>
-              <p className="mt-1 text-[11px] text-stone-600">We can add mood boards, new arrivals, or festive edit next.</p>
-            </div>
-            <button className="rounded-full bg-stone-950 px-3 py-2 text-[11px] font-semibold text-white">
-              See more
-            </button>
-          </div>
-        </section>
       </main>
 
-      <BottomNav />
+      {/* Mobile Dock Navigation */}
+      <div className="block md:hidden">
+        <BottomNav />
+      </div>
+
+      {/* ===== DESKTOP FOOTER (>= 768px) ===== */}
+      <div className="hidden md:block">
+        <DesktopFooter />
+      </div>
     </div>
   );
 }

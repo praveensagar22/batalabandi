@@ -38,10 +38,10 @@ export default function Header({ activeTab = 'all' }: HeaderProps) {
   }, []);
 
   return (
-    <header className={`${currentTheme.bg} sticky top-0 z-40 px-4 py-1.5 flex items-center justify-between transition-colors duration-300 shadow-2xs`}>
+    <header className={`${currentTheme.bg} sticky top-0 z-40 px-4 py-2 flex items-center justify-between transition-colors duration-300 shadow-2xs`}>
       {/* Brand */}
       <Link href="/" className="flex items-center">
-        <div className="relative h-8 w-28 sm:w-32  overflow-hidden">
+        <div className="relative h-10 w-36 overflow-hidden">
           <Image
             src="/logo.png"
             alt="BatalaBandi"
@@ -54,11 +54,11 @@ export default function Header({ activeTab = 'all' }: HeaderProps) {
       </Link>
 
       {/* Profile / Actions */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1.5">
         {user ? (
           <Link
             href="/profile"
-            className="w-8 h-8 rounded-full bg-stone-950 text-amber-300 font-extrabold flex items-center justify-center text-xs shadow-xs"
+            className="w-10 h-10 rounded-full bg-stone-950 text-amber-300 font-extrabold flex items-center justify-center text-sm shadow-xs hover:scale-105 transition-transform"
             aria-label="Go to profile"
           >
             {user.name.charAt(0).toUpperCase()}
@@ -66,10 +66,10 @@ export default function Header({ activeTab = 'all' }: HeaderProps) {
         ) : (
           <button
             onClick={() => setIsAuthOpen(true)}
-            className={`w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/10 transition-colors ${currentTheme.text}`}
+            className={`w-10 h-10 flex items-center justify-center rounded-full hover:bg-black/10 active:scale-95 transition-all ${currentTheme.text}`}
             aria-label="Open Login Modal"
           >
-            <User className="w-5 h-5" strokeWidth={2} />
+            <User className="w-6 h-6" strokeWidth={2.2} />
           </button>
         )}
       </div>

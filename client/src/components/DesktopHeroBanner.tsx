@@ -92,23 +92,29 @@ export default function DesktopHeroBanner() {
         </div>
       ))}
 
-      {/* Minimal Overlay Content Card (Bottom Left) */}
-      <div className="absolute bottom-8 left-8 lg:bottom-12 lg:left-12 z-20 max-w-lg space-y-3">
-        <div className="space-y-1">
-          <h2 className="text-3xl lg:text-4xl font-black font-serif text-white tracking-tight drop-shadow-md">
+      {/* Minimalist Overlay Content Card (Bottom Left) */}
+      <div className="absolute bottom-10 left-8 lg:bottom-14 lg:left-14 z-20 max-w-xl space-y-4">
+        <div className="space-y-2">
+          <span className="inline-block text-[10px] md:text-xs font-semibold uppercase tracking-[0.3em] text-stone-300 bg-stone-950/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
+            ✦ Artisan Apparel Drop 2026 ✦
+          </span>
+          <h2 className="text-3xl lg:text-5xl font-black text-white tracking-tight leading-tight">
             {active.title}
           </h2>
-          <p className="text-xs lg:text-sm text-stone-200 font-semibold tracking-wide">
+          <p className="text-xs lg:text-sm text-stone-200 font-medium tracking-wide max-w-md">
             {active.subtitle}
           </p>
         </div>
 
-        <Link
-          href={active.targetLink}
-          className="inline-flex items-center gap-2 bg-[#facc15] hover:bg-[#eab308] active:scale-95 text-stone-950 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-wider shadow-xl transition-all"
-        >
-          {active.ctaText} <ArrowRight className="w-4 h-4" />
-        </Link>
+        <div className="pt-1">
+          <Link
+            href={active.targetLink}
+            className="inline-flex items-center gap-2.5 bg-white hover:bg-stone-100 active:scale-95 text-stone-950 px-7 py-3.5 rounded-full font-bold text-xs uppercase tracking-widest shadow-2xl transition-all"
+          >
+            <span>{active.ctaText}</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
       </div>
 
       {/* Previous / Next Arrow Controls */}
@@ -117,29 +123,29 @@ export default function DesktopHeroBanner() {
           setCurrentSlide((prev) => (prev === 0 ? banners.length - 1 : prev - 1))
         }
         aria-label="Previous Slide"
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-stone-950/40 hover:bg-stone-950/80 text-white flex items-center justify-center border border-white/20 backdrop-blur-md transition-all active:scale-90 shadow-lg"
+        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-stone-950/30 hover:bg-stone-950/80 text-white flex items-center justify-center border border-white/20 backdrop-blur-md transition-all active:scale-90"
       >
-        <ChevronLeft className="w-6 h-6" />
+        <ChevronLeft className="w-5 h-5" />
       </button>
 
       <button
         onClick={() => setCurrentSlide((prev) => (prev + 1) % banners.length)}
         aria-label="Next Slide"
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-stone-950/40 hover:bg-stone-950/80 text-white flex items-center justify-center border border-white/20 backdrop-blur-md transition-all active:scale-90 shadow-lg"
+        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-stone-950/30 hover:bg-stone-950/80 text-white flex items-center justify-center border border-white/20 backdrop-blur-md transition-all active:scale-90"
       >
-        <ChevronRight className="w-6 h-6" />
+        <ChevronRight className="w-5 h-5" />
       </button>
 
       {/* Minimal Dot Indicators (Bottom Right) */}
-      <div className="absolute bottom-8 right-8 lg:bottom-12 lg:right-12 z-20 flex items-center gap-2 bg-stone-950/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+      <div className="absolute bottom-10 right-8 lg:bottom-14 lg:right-14 z-20 flex items-center gap-2 bg-stone-950/60 backdrop-blur-md px-3.5 py-2 rounded-full border border-white/10">
         {banners.map((b, idx) => (
           <button
             key={b.id}
             onClick={() => setCurrentSlide(idx)}
             aria-label={`Go to slide ${idx + 1}`}
-            className={`h-2 rounded-full transition-all duration-300 ${
+            className={`h-1.5 rounded-full transition-all duration-300 ${
               idx === currentSlide
-                ? 'w-7 bg-[#facc15]'
+                ? 'w-8 bg-white'
                 : 'w-2 bg-white/40 hover:bg-white/80'
             }`}
           />
