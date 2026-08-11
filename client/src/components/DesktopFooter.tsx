@@ -54,8 +54,8 @@ export default function DesktopFooter() {
               <RotateCcw className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="text-sm font-extrabold text-white">7-Day Easy Returns</h4>
-              <p className="text-xs text-stone-400 font-medium">Hassle-free size exchanges & returns</p>
+              <h4 className="text-sm font-extrabold text-white">7-Day Size Exchange</h4>
+              <p className="text-xs text-stone-400 font-medium">Hassle-free size & defect exchange</p>
             </div>
           </div>
 
@@ -115,12 +115,12 @@ export default function DesktopFooter() {
             <ul className="space-y-2 text-xs font-semibold text-stone-400">
               <li>
                 <Link href="/products?search=Men" className="hover:text-white transition-colors">
-                  Men's Streetwear Collection
+                  Men&apos;s Streetwear Collection
                 </Link>
               </li>
               <li>
                 <Link href="/products?search=Women" className="hover:text-white transition-colors">
-                  Women's Artisan Tops & Kurtas
+                  Women&apos;s Artisan Tops & Kurtas
                 </Link>
               </li>
               <li>
@@ -134,8 +134,8 @@ export default function DesktopFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/products" className="hover:text-white transition-colors">
-                  All Garment Drops
+                <Link href="/about" className="hover:text-white transition-colors">
+                  About BatalaBandi
                 </Link>
               </li>
             </ul>
@@ -146,28 +146,33 @@ export default function DesktopFooter() {
             <h4 className="text-xs font-black text-amber-400 uppercase tracking-widest">Customer Care</h4>
             <ul className="space-y-2 text-xs font-semibold text-stone-400">
               <li>
+                <Link href="/refund-policy" className="hover:text-white transition-colors">
+                  Return & Exchange Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/shipping-policy" className="hover:text-white transition-colors">
+                  Shipping & Delivery
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className="hover:text-white transition-colors">
+                  Terms & Conditions
+                </Link>
+              </li>
+              <li>
+                <Link href="/privacy" className="hover:text-white transition-colors">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="hover:text-white transition-colors">
+                  Contact Us
+                </Link>
+              </li>
+              <li>
                 <Link href="/profile" className="hover:text-white transition-colors">
                   Track Your Order
-                </Link>
-              </li>
-              <li>
-                <Link href="/cart" className="hover:text-white transition-colors">
-                  Shopping Bag
-                </Link>
-              </li>
-              <li>
-                <Link href="/wishlist" className="hover:text-white transition-colors">
-                  Saved Wishlist
-                </Link>
-              </li>
-              <li>
-                <Link href="/profile" className="hover:text-white transition-colors">
-                  Help & FAQs
-                </Link>
-              </li>
-              <li>
-                <Link href="/profile" className="hover:text-white transition-colors">
-                  Shipping & Return Policy
                 </Link>
               </li>
             </ul>
