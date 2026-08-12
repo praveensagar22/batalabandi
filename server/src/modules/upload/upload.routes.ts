@@ -25,4 +25,25 @@ router.post('/', upload.single('file'), (req: Request, res: Response) => {
   });
 });
 
+// POST /api/v1/upload/multiple - Upload multiple image files (up to 5)
+router.post('/multiple', upload.array('photos', 5), (req: Request, res: Response) => {
+  const files = req.files as Express.Multer.File[];
+  if (!files || files.length === 0) {
+    return res.status(400).json({
+      status: 'fail',
+      message: 'No files uploaded',
+    });
+  }
+
+  const urls = files.map((file) => `/uploads/${file.filename}`);
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      urls,
+      count: urls.length,
+    },
+  });
+});
+
 export default router;

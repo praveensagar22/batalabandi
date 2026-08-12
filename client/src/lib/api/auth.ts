@@ -24,6 +24,7 @@ export async function loginAPI(credentials: { email: string; password: string })
   if (typeof window !== 'undefined' && res.data.accessToken) {
     localStorage.setItem('token', res.data.accessToken);
     localStorage.setItem('user', JSON.stringify(res.data.user));
+    window.dispatchEvent(new Event('auth-updated'));
   }
 
   return res.data;
@@ -38,6 +39,7 @@ export async function registerAPI(data: { name: string; email: string; password:
   if (typeof window !== 'undefined' && res.data.accessToken) {
     localStorage.setItem('token', res.data.accessToken);
     localStorage.setItem('user', JSON.stringify(res.data.user));
+    window.dispatchEvent(new Event('auth-updated'));
   }
 
   return res.data;
@@ -64,6 +66,7 @@ export async function logoutAPI(): Promise<void> {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      window.dispatchEvent(new Event('auth-updated'));
     }
   }
 }

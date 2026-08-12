@@ -17,7 +17,7 @@ export const createOrderSchema = z.object({
       postalCode: z.string().min(1, 'Postal code is required'),
       country: z.string().min(1, 'Country is required'),
     }),
-    paymentMethod: z.string().default('COD'),
+    paymentMethod: z.string().default('RAZORPAY'),
     totalAmount: z.number().min(0),
   }),
 });

@@ -7,6 +7,7 @@ import { ThemeModel } from '../themes/theme.model';
 import { AttributeModel } from '../attributes/attribute.model';
 import { InventoryModel } from '../inventory/inventory.model';
 import { CouponModel } from '../marketing/coupon.model';
+import { Review } from '../reviews/review.model';
 import { User } from '../auth/user.model';
 import { catchAsync } from '../../utils/catchAsync';
 
@@ -685,10 +686,73 @@ export class SeedController {
       couponSeeded = true;
     }
 
+    // Seed Product Reviews
+    let reviewsSeeded = false;
+    const reviewCount = await Review.countDocuments();
+    if (reviewCount === 0) {
+      const allProducts = await Product.find();
+      const sampleReviews = [
+        {
+          userName: 'Vikram Reddy',
+          rating: 5,
+          title: 'Outstanding Kalamkari craft & fit!',
+          comment: 'The texture is incredibly soft and premium 240 GSM weight. The print has distinct heritage details that got me so many compliments at a recent event.',
+          photos: [
+            'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=600&q=80',
+          ],
+          verifiedPurchase: true,
+          helpfulCount: 14,
+        },
+        {
+          userName: 'Ananya Sharma',
+          rating: 5,
+          title: 'Best heavy tee in my closet',
+          comment: 'Colors match the photos 100%. The drop shoulder boxy fit gives an effortless streetwear look while staying super breathable.',
+          photos: [
+            'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=600&q=80',
+          ],
+          verifiedPurchase: true,
+          helpfulCount: 9,
+        },
+        {
+          userName: 'Rohan Verma',
+          rating: 4,
+          title: 'Premium quality and fast shipping',
+          comment: 'Package arrived within 3 days. Loved the fabric feel and stitch quality. Definitely ordering again!',
+          photos: [],
+          verifiedPurchase: true,
+          helpfulCount: 5,
+        },
+        {
+          userName: 'Priya Nambiar',
+          rating: 5,
+          title: 'Unique fusion aesthetic ✨',
+          comment: 'Combining traditional motifs with modern oversized cuts is genius. Highly recommended!',
+          photos: [
+            'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=600&q=80',
+          ],
+          verifiedPurchase: true,
+          helpfulCount: 12,
+        },
+      ];
+
+      for (const prod of allProducts) {
+        for (const rev of sampleReviews) {
+          await Review.create({
+            productId: prod._id,
+            ...rev,
+            status: 'approved',
+          });
+        }
+      }
+      reviewsSeeded = true;
+    }
+
     res.status(200).json({
       status: 'success',
       message: 'Catalog database seed completed successfully',
-      seeded: { categoriesSeeded, ptSeeded, colSeeded, themeSeeded, attrSeeded, prodSeeded, invSeeded, couponSeeded },
+      seeded: { categoriesSeeded, ptSeeded, colSeeded, themeSeeded, attrSeeded, prodSeeded, invSeeded, couponSeeded, reviewsSeeded },
     });
   });
 }

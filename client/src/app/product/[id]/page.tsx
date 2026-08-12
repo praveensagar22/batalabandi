@@ -32,6 +32,7 @@ import { toggleWishlist, isInWishlist } from '@/lib/wishlist/store';
 import { ProductDetailSkeleton } from '@/components/common/Skeletons';
 import DesktopHeader from '@/components/DesktopHeader';
 import DesktopFooter from '@/components/DesktopFooter';
+import ProductReviewsSection from '@/components/product/ProductReviewsSection';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -576,6 +577,9 @@ export default function ProductDetailPage({ params }: PageProps) {
             </div>
           </div>
         </div>
+
+        {/* Product Reviews Section */}
+        <ProductReviewsSection productId={product.id} productTitle={product.title} />
 
         {/* Related Products Showcase (Minimalist 4:5 Cards) */}
         {relatedProducts.length > 0 && (

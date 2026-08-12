@@ -10,6 +10,7 @@ import {
   BarChart3,
   Settings,
   BookOpen,
+  MessageSquare,
 } from "lucide-react";
 
 export const sidebarItems = [
@@ -67,6 +68,11 @@ export const sidebarItems = [
     title: "Customers",
     href: "/admin/customers",
     icon: Users,
+  },
+  {
+    title: "Reviews",
+    href: "/admin/reviews",
+    icon: MessageSquare,
   },
   {
     title: "Marketing",

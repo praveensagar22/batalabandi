@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -22,6 +22,7 @@ import DesktopHeader from '@/components/DesktopHeader';
 import DesktopFooter from '@/components/DesktopFooter';
 import {
   getCart,
+  getLocalCart,
   CartItem,
   clearCart,
   calculateBackendCartAPI,
@@ -34,6 +35,8 @@ import {
   createRazorpayOrderAPI,
   verifyPaymentAPI,
 } from '@/lib/api/payments';
+import AuthModal from '@/components/common/AuthModal';
+import { getStoredUser, isAuthenticated, UserProfile } from '@/lib/api/auth';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -50,38 +53,17 @@ export default function CheckoutPage() {
   const [city, setCity] = useState('New Delhi');
   const [state, setState] = useState('Delhi');
 
-  // Payment Method State (Strictly Online Payments Only)
+  // Payment Method State (Strictly Online Payment Only)
   const [paymentMethod, setPaymentMethod] = useState<'upi' | 'card'>('upi');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState<{ orderId: string; total: number } | null>(null);
 
-  useEffect(() => {
-    async function loadBackendCheckout() {
-      const cart = await getCart();
-      setItems(cart);
-      if (cart.length > 0) {
-        try {
-          const res = await calculateBackendCartAPI(cart);
-          setBackendData(res);
-        } catch (e) {
-          console.error('Failed to fetch backend checkout calculation');
-        }
-      }
-      setIsLoading(false);
-    }
+  // Auth State
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const pendingCheckoutRef = useRef(false);
 
-    loadBackendCheckout();
-  }, []);
-
-  const finalTotal = backendData?.summary.finalTotal || 0;
-
-  const showSystemError = (msg: string) => {
-    setErrorToast(msg);
-    setTimeout(() => setErrorToast(null), 5000);
-  };
-
-  const handlePlaceOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const initiateRazorpayPayment = async () => {
     if (items.length === 0) return;
 
     setIsPlacingOrder(true);
@@ -144,7 +126,7 @@ export default function CheckoutPage() {
         order_id: rzpData.razorpayOrderId,
         prefill: {
           name: fullName,
-          email: 'customer@batalabandi.com',
+          email: getStoredUser()?.email || 'customer@batalabandi.com',
           contact: phone,
         },
         theme: {
@@ -188,6 +170,105 @@ export default function CheckoutPage() {
       showSystemError('Could not connect to payment server. Please try again.');
       setIsPlacingOrder(false);
     }
+  };
+
+  const syncAuth = () => {
+    const stored = getStoredUser();
+    if (stored) {
+      setCurrentUser(stored);
+      if (stored.name) setFullName(stored.name);
+      setShowAuthModal(false);
+
+      if (pendingCheckoutRef.current) {
+        pendingCheckoutRef.current = false;
+        setTimeout(() => {
+          initiateRazorpayPayment();
+        }, 400);
+      }
+    }
+  };
+
+  useEffect(() => {
+    syncAuth();
+    window.addEventListener('auth-updated', syncAuth);
+
+    async function loadBackendCheckout() {
+      const dbCart = await getCart();
+      const localCart = getLocalCart();
+      const effectiveItems = dbCart.length > 0 ? dbCart : localCart;
+
+      setItems(effectiveItems);
+
+      if (effectiveItems.length > 0) {
+        try {
+          const res = await calculateBackendCartAPI(effectiveItems);
+          setBackendData(res);
+        } catch (e) {
+          console.warn('Backend cart calculation failed, constructing fallback calculation', e);
+          const subtotal = effectiveItems.reduce((acc: number, it: CartItem) => acc + (it.price || 0) * (it.quantity || 1), 0);
+          setBackendData({
+            items: effectiveItems.map((it: CartItem) => ({
+              id: it.id || it.productId,
+              productId: it.productId || it.id,
+              title: it.title,
+              subtitle: it.subtitle,
+              price: it.price,
+              compareAtPrice: it.compareAtPrice,
+              image: it.image,
+              color: it.color || 'Standard',
+              size: it.size || 'M',
+              quantity: it.quantity || 1,
+              itemSubtotal: (it.price || 0) * (it.quantity || 1),
+              itemOriginalTotal: (it.compareAtPrice || it.price || 0) * (it.quantity || 1),
+              inStock: true,
+            })),
+            summary: {
+              itemCount: effectiveItems.reduce((acc: number, it: CartItem) => acc + (it.quantity || 1), 0),
+              originalTotal: subtotal,
+              subtotal,
+              productDiscount: 0,
+              couponDiscount: 0,
+              shippingFee: 0,
+              isFreeShipping: true,
+              freeShippingThreshold: 999,
+              amountForFreeShipping: 0,
+              finalTotal: subtotal,
+            },
+            coupon: null,
+          });
+        }
+      }
+      setIsLoading(false);
+    }
+
+    loadBackendCheckout();
+
+    return () => {
+      window.removeEventListener('auth-updated', syncAuth);
+    };
+  }, []);
+
+  const finalTotal =
+    backendData?.summary?.finalTotal ||
+    items.reduce((acc: number, it: CartItem) => acc + (it.price || 0) * (it.quantity || 1), 0);
+
+  const showSystemError = (msg: string) => {
+    setErrorToast(msg);
+    setTimeout(() => setErrorToast(null), 5000);
+  };
+
+  const handlePlaceOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (items.length === 0) return;
+
+    if (!isAuthenticated()) {
+      pendingCheckoutRef.current = true;
+      setShowAuthModal(true);
+      showSystemError('Authentication Required: Log in to open Razorpay payment gateway.');
+      return;
+    }
+
+    await initiateRazorpayPayment();
   };
 
   return (
@@ -264,7 +345,7 @@ export default function CheckoutPage() {
             <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto" />
             <p className="text-xs font-bold text-stone-700">Verifying Order Details with Server...</p>
           </div>
-        ) : items.length > 0 && backendData ? (
+        ) : items.length > 0 ? (
           <form onSubmit={handlePlaceOrder}>
             {/* 2-Column Desktop Grid Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -399,11 +480,11 @@ export default function CheckoutPage() {
                 {/* Order Items Preview Card */}
                 <div className="bg-white rounded-3xl p-6 md:p-8 border border-stone-200/90 shadow-2xs space-y-4">
                   <h3 className="text-sm font-black text-stone-950 uppercase tracking-wider pb-3 border-b border-stone-100">
-                    Order Summary ({backendData.items.length} Items)
+                    Order Summary ({(backendData?.items?.length || items.length)} Items)
                   </h3>
 
                   <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
-                    {backendData.items.map((item) => (
+                    {(backendData?.items || items.map(it => ({ id: it.id || it.productId, title: it.title, size: it.size || 'M', quantity: it.quantity, image: it.image, itemSubtotal: it.price * it.quantity }))).map((item) => (
                       <div key={item.id} className="flex items-center justify-between text-xs font-medium">
                         <div className="flex items-center gap-3">
                           <div className="relative w-10 h-12 rounded-xl overflow-hidden bg-stone-100 shrink-0">
@@ -544,6 +625,16 @@ export default function CheckoutPage() {
       <div className="hidden md:block">
         <DesktopFooter />
       </div>
+
+      {/* Auth Modal for Login Requirement */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={(u) => {
+          setCurrentUser(u);
+          if (u.name) setFullName(u.name);
+        }}
+      />
     </div>
   );
 }

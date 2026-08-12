@@ -28,6 +28,7 @@ import attributeRoutes from './modules/attributes/attribute.routes';
 import inventoryRoutes from './modules/inventory/inventory.routes';
 import marketingRoutes from './modules/marketing/marketing.routes';
 import paymentRoutes from './modules/payments/payment.routes';
+import reviewRoutes from './modules/reviews/review.routes';
 
 const app: Application = express();
 
@@ -99,6 +100,7 @@ app.use('/api/v1/attributes', attributeRoutes);
 app.use('/api/v1/inventory', inventoryRoutes);
 app.use('/api/v1/marketing', marketingRoutes);
 app.use('/api/v1/payments', paymentRoutes);
+app.use('/api/v1/reviews', reviewRoutes);
 
 // Unhandled Route Handler
 app.all('*', (req: Request, res: Response, next: NextFunction) => {

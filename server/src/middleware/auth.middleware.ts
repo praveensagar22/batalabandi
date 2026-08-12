@@ -20,14 +20,9 @@ export const protect = catchAsync(
     }
 
     if (!token) {
-      // For seamless Admin CMS development, permit requests with default Admin context
-      req.user = {
-        _id: 'admin-dev-id',
-        name: 'Admin',
-        email: 'admin@batalabandi.com',
-        role: 'admin',
-      } as any;
-      return next();
+      return next(
+        new AppError('You are not logged in! Please log in to perform checkout or view your profile.', 401)
+      );
     }
 
     try {
@@ -36,21 +31,14 @@ export const protect = catchAsync(
       if (currentUser) {
         req.user = currentUser;
       } else {
-        req.user = {
-          _id: decoded.userId || 'admin-dev-id',
-          name: 'Admin',
-          email: 'admin@batalabandi.com',
-          role: 'admin',
-        } as any;
+        return next(
+          new AppError('The user belonging to this token no longer exists.', 401)
+        );
       }
     } catch (err) {
-      // Fallback to Admin role so operations continue smoothly
-      req.user = {
-        _id: 'admin-dev-id',
-        name: 'Admin',
-        email: 'admin@batalabandi.com',
-        role: 'admin',
-      } as any;
+      return next(
+        new AppError('Invalid or expired session token. Please log in again.', 401)
+      );
     }
 
     next();

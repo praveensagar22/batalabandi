@@ -51,8 +51,12 @@ export class OrderService {
 
   static async createOrder(userId: string | undefined, data: any) {
     const validUserId = userId && mongoose.Types.ObjectId.isValid(userId) ? userId : undefined;
+    const generatedOrderNumber =
+      data.orderNumber || `ORD-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
     return await Order.create({
       ...data,
+      orderNumber: generatedOrderNumber,
       ...(validUserId ? { user: validUserId } : {}),
     });
   }

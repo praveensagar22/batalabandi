@@ -9,7 +9,8 @@ export interface IOrderItem {
 }
 
 export interface IOrder extends Document {
-  user: mongoose.Types.ObjectId;
+  orderNumber: string;
+  user?: mongoose.Types.ObjectId;
   orderItems: IOrderItem[];
   shippingAddress: {
     address: string;
@@ -30,8 +31,7 @@ export interface IOrder extends Document {
 
 const orderItemSchema = new Schema<IOrderItem>({
   product: {
-    type: Schema.Types.ObjectId,
-    ref: 'Product',
+    type: Schema.Types.Mixed,
     required: true,
   },
   title: { type: String, required: true },
@@ -42,6 +42,12 @@ const orderItemSchema = new Schema<IOrderItem>({
 
 const orderSchema = new Schema<IOrder>(
   {
+    orderNumber: {
+      type: String,
+      unique: true,
+      index: true,
+      default: () => `ORD-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
+    },
     user: {
       type: Schema.Types.ObjectId,
       ref: 'User',
@@ -58,7 +64,7 @@ const orderSchema = new Schema<IOrder>(
     paymentMethod: {
       type: String,
       required: true,
-      default: 'COD',
+      default: 'RAZORPAY',
     },
     paymentStatus: {
       type: String,
@@ -84,5 +90,13 @@ const orderSchema = new Schema<IOrder>(
     timestamps: true,
   }
 );
+
+// Pre-validate hook to guarantee orderNumber is always populated
+orderSchema.pre('validate', function (next) {
+  if (!this.orderNumber) {
+    this.orderNumber = `ORD-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+  }
+  next();
+});
 
 export const Order = mongoose.model<IOrder>('Order', orderSchema);

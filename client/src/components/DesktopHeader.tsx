@@ -73,6 +73,7 @@ export default function DesktopHeader() {
     updateCounts();
     window.addEventListener('storage', updateCounts);
     window.addEventListener('cart-updated', updateCounts);
+    window.addEventListener('auth-updated', updateCounts);
 
     async function loadData() {
       try {
@@ -91,6 +92,7 @@ export default function DesktopHeader() {
     return () => {
       window.removeEventListener('storage', updateCounts);
       window.removeEventListener('cart-updated', updateCounts);
+      window.removeEventListener('auth-updated', updateCounts);
       if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
     };
   }, []);

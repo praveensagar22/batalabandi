@@ -88,7 +88,6 @@ export default function ProfilePage() {
   };
 
   async function loadUserAndOrders() {
-    setLoadingOrders(true);
     const stored = getStoredUser();
     setUser(stored);
     if (stored) {
@@ -99,26 +98,40 @@ export default function ProfilePage() {
     const wish = getWishlist();
     setWishlistCount(wish.length);
 
-    // Verify token with server
-    const serverUser = await getMeAPI();
-    if (serverUser) {
-      setUser(serverUser);
-      setEditName(serverUser.name || '');
-      setEditPhone(serverUser.phone || '');
-    }
+    if (stored) {
+      setLoadingOrders(true);
+      try {
+        const [serverUser, data] = await Promise.all([
+          getMeAPI().catch(() => null),
+          getMyOrdersAPI().catch(() => []),
+        ]);
 
-    try {
-      const data = await getMyOrdersAPI();
-      setOrders(data);
-    } catch (err) {
-      console.warn('Failed to load user orders:', err);
-    } finally {
+        if (serverUser) {
+          setUser(serverUser);
+          setEditName(serverUser.name || '');
+          setEditPhone(serverUser.phone || '');
+        }
+        if (data) {
+          setOrders(data);
+        }
+      } catch (err) {
+        console.warn('Failed to load user profile/orders:', err);
+      } finally {
+        setLoadingOrders(false);
+      }
+    } else {
+      setOrders([]);
       setLoadingOrders(false);
     }
   }
 
   useEffect(() => {
     loadUserAndOrders();
+    window.addEventListener('auth-updated', loadUserAndOrders);
+
+    return () => {
+      window.removeEventListener('auth-updated', loadUserAndOrders);
+    };
   }, []);
 
   const handleLogout = async () => {
